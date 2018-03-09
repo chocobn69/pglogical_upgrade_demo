@@ -1,0 +1,25 @@
+version: '3.5'
+
+services:
+
+  db1:
+    build: ./db1
+    restart: always
+    environment:
+        POSTGRES_PASSWORD: db1
+        POSTGRES_INITDB_ARGS: '--locale=en_US.UTF-8'
+    volumes:
+        - ./db1/my-postgres-db1.conf:/etc/postgresql/postgresql.conf
+        - ./my-pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: -c config_file=/etc/postgresql/postgresql.conf
+
+  db2:
+    build: ./db2
+    restart: always
+    environment:
+        POSTGRES_PASSWORD: db2
+        POSTGRES_INITDB_ARGS: '--locale=C'
+    volumes:
+        - ./db2/my-postgres-db2.conf:/etc/postgresql/postgresql.conf
+        - ./my-pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: -c config_file=/etc/postgresql/postgresql.conf
