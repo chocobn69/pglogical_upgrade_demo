@@ -65,12 +65,15 @@ SELECT * FROM pg_create_logical_replication_slot('my_logical_replication_slot', 
  
 Then on db2, we should be able to create subscription
 
-```create subscription sub_test connection 'host=db1 port=5432 user=postgres dbname=postgres' publication my_logical_replication_slot;```
+```
+create subscription sub_test connection 'host=db1 port=5432 user=postgres dbname=postgres' publication my_logical_replication_slot;
+```
 
 But right now I only get this error :
 
-```ERROR:  could not receive list of replicated tables from the publisher: ERROR:  syntax error```
-
+```
+ERROR:  could not receive list of replicated tables from the publisher: ERROR:  syntax error
+```
 
 I think we can't easily use pg 10 logical replication with pg 9.6 logical replication slot. We may have to use an output plugins (instead of 'test_decoding' one.
 
