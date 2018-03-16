@@ -14,7 +14,7 @@ We will test logical replication between db with different version and locale
 
 Here is the docker-compose.yml I will use:
 
-```
+```yaml
 version: '3.5'
 
 services:
@@ -42,7 +42,8 @@ services:
     command: -c config_file=/etc/postgresql/postgresql.conf
 ```
 
-You have to generate postgresql.conf and pg_hba.conf file according to logical replication tutorial
+You have to generate postgresql.conf and pg_hba.conf file according to pglogical replication tutorial
+https://www.2ndquadrant.com/en/resources/pglogical/pglogical-installation-instructions/
 
 Let's launch the stack : `docker-compose up -d`
 
@@ -50,30 +51,91 @@ Now we can connect to first db1 db : `docker exec -ti divers_db1_1 psql -U postg
 
 And second (db2) `docker exec -ti divers_db2_1 psql -U postgres -p 6432`
 
-## Creating replication
+## Initial structure / datas
 
-Create a logical replication slote (??)
-```
-SELECT * FROM pg_create_logical_replication_slot('my_logical_replication_slot', 'test_decoding');
-```
+As we will migrate an existing database, we will create initial tables and datas on db1.
 
-```
-          slot_name          | xlog_position 
------------------------------+---------------
- my_logical_replication_slot | 0/14EEE90
- ```
- 
-Then on db2, we should be able to create subscription
-
-```
-create subscription sub_test connection 'host=db1 port=5432 user=postgres dbname=postgres' publication my_logical_replication_slot;
+Structure :
+```sql
+create table table1(id serial primary key, comment text);
+create table table2(id serial primary key, comment text);
 ```
 
-But right now I only get this error :
+Note: The structure must be created both on db1 and db2, as pglogical does not handle
+initial DDL.
+
+
+Datas:
+```sql
+insert into table1(comment)
+select md5(random()::text)
+from generate_series (1,10);
+
+insert into table2(comment)
+select md5(random()::text)
+from generate_series (1,10);
+```
+
+
+## pglogical install
+
+postgresql.conf
+
+```conf
+wal_level = 'logical'
+max_worker_processes = 10   # one per database needed on provider node
+                            # one per node needed on subscriber node
+max_replication_slots = 10  # one per node needed on provider node
+max_wal_senders = 10        # one per node needed on provider node
+shared_preload_libraries = 'pglogical'
+track_commit_timestamp = on
+```
+
+On each node
+
+```sql
+CREATE EXTENSION pglogical;
+```
+
+Then on db1 (provider node)
+
+```sql
+SELECT pglogical.create_node(
+    node_name := 'provider1',
+    dsn := 'host=db1 port=5432 dbname=postgres'
+);
+```
+
+Add all tables in replication set on db1
+
+```sql
+SELECT pglogical.replication_set_add_all_tables('default', ARRAY['public']);
+```
+
+Then on db2 (subscriber)
+
+```sql
+SELECT pglogical.create_node(
+    node_name := 'subscriber1',
+    dsn := 'host=db2 port=6432 dbname=postgres'
+);
+```
+
+Then start replication on db2
+
+```sql
+SELECT pglogical.create_subscription(
+    subscription_name := 'subscription1',
+    provider_dsn := 'host=db1 port=5432 dbname=postgres'
+);
+```
+
+## Errors
+
+Sadly, it looks like we can't use pglogical with two different locale
 
 ```
-ERROR:  could not receive list of replicated tables from the publisher: ERROR:  syntax error
+ERROR:  encoding conversion for binary datum not supported yet
+DETAIL:  expected_encoding SQL_ASCII must be unset or match server_encoding UTF8
+CONTEXT:  slot "pgl_postgres_provider1_subscription1", output plugin "pglogical_output", in the startup callback
 ```
-
-I think we can't easily use pg 10 logical replication with pg 9.6 logical replication slot. We may have to use an output plugins (instead of 'test_decoding' one.
-
