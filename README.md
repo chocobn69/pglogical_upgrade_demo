@@ -69,11 +69,11 @@ Datas:
 ```sql
 insert into table1(comment)
 select md5(random()::text)
-from generate_series (1,10);
+from generate_series (1,1000);
 
 insert into table2(comment)
 select md5(random()::text)
-from generate_series (1,10);
+from generate_series (1,1000);
 ```
 
 
@@ -139,3 +139,9 @@ ERROR:  encoding conversion for binary datum not supported yet
 DETAIL:  expected_encoding SQL_ASCII must be unset or match server_encoding UTF8
 CONTEXT:  slot "pgl_postgres_provider1_subscription1", output plugin "pglogical_output", in the startup callback
 ```
+
+## Solution
+
+RhodiumToad is telling me that it's an encoding error, so I could possibily use C locale with UTF8 encoding.
+
+And no error !!

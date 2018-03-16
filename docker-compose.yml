@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
         POSTGRES_PASSWORD: db1
-        POSTGRES_INITDB_ARGS: '--locale=en_US.UTF-8'
+        POSTGRES_INITDB_ARGS: '--locale=en_US.UTF-8 --encoding=UTF8'
     volumes:
         - ./db1/my-postgres-db1.conf:/etc/postgresql/postgresql.conf
         - ./my-pg_hba.conf:/etc/postgresql/pg_hba.conf
@@ -18,7 +18,7 @@ services:
     restart: always
     environment:
         POSTGRES_PASSWORD: db2
-        POSTGRES_INITDB_ARGS: '--locale=C'
+        POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
     volumes:
         - ./db2/my-postgres-db2.conf:/etc/postgresql/postgresql.conf
         - ./my-pg_hba.conf:/etc/postgresql/pg_hba.conf
