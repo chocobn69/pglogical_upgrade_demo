@@ -2,11 +2,11 @@
 We will test logical replication between db with different version and locale
 
 - db1 : 9.6 and en_US.UTF-8
-- db2 : 10.3 and C
+- db2 : 11 and C
 
 ## links
 
-- https://www.postgresql.org/docs/10/static/sql-createsubscription.html
+- https://www.postgresql.org/docs/11/static/sql-createsubscription.html
 - https://www.postgresql.org/docs/9.6/static/logicaldecoding-example.html
 - https://www.2ndquadrant.com/en/resources/pglogical/pglogical-docs/
 
@@ -31,11 +31,11 @@ services:
     command: -c config_file=/etc/postgresql/postgresql.conf
 
   db2:
-    image: postgres:10
+    image: postgres:11
     restart: always
     environment:
         POSTGRES_PASSWORD: db2
-        POSTGRES_INITDB_ARGS: '--locale=C'
+        POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
     volumes:
         - ./my-postgres-db2.conf:/etc/postgresql/postgresql.conf
         - ./my-pg_hba.conf:/etc/postgresql/pg_hba.conf
@@ -47,9 +47,9 @@ https://www.2ndquadrant.com/en/resources/pglogical/pglogical-installation-instru
 
 Let's launch the stack : `docker-compose up -d`
 
-Now we can connect to first db1 db : `docker exec -ti divers_db1_1 psql -U postgres`
+Now we can connect to first db1 db : `docker exec -ti pglogical_upgrade_demo_db1_1 psql -U postgres`
 
-And second (db2) `docker exec -ti divers_db2_1 psql -U postgres -p 6432`
+And second (db2) `docker exec -ti pglogical_upgrade_demo_db2_1 psql -U postgres -p 6432`
 
 ## Initial structure / datas
 
@@ -129,19 +129,3 @@ SELECT pglogical.create_subscription(
     provider_dsn := 'host=db1 port=5432 dbname=postgres'
 );
 ```
-
-## Errors
-
-Sadly, it looks like we can't use pglogical with two different locale
-
-```
-ERROR:  encoding conversion for binary datum not supported yet
-DETAIL:  expected_encoding SQL_ASCII must be unset or match server_encoding UTF8
-CONTEXT:  slot "pgl_postgres_provider1_subscription1", output plugin "pglogical_output", in the startup callback
-```
-
-## Solution
-
-RhodiumToad is telling me that it's an encoding error, so I could possibily use C locale with UTF8 encoding.
-
-And no error !!
