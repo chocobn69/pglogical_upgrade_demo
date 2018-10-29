@@ -65,7 +65,7 @@ Note: The structure must be created both on db1 and db2, as pglogical does not h
 initial DDL.
 
 
-Datas:
+Datas on db1 only:
 ```sql
 insert into table1(comment)
 select md5(random()::text)

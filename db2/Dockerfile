@@ -1,4 +1,4 @@
-FROM postgres:11
+FROM postgres:11.0
 
 RUN apt-get update && apt-get install -y wget gnupg
 RUN echo "deb [arch=amd64] http://packages.2ndquadrant.com/pglogical/apt/ jessie-2ndquadrant main" > /etc/apt/sources.list.d/2ndquadrant.list \
